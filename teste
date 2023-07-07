@@ -1,0 +1,146 @@
+import pygame
+import random
+
+# Inicialização do Pygame
+pygame.init()
+
+# Definição das cores
+PRETO = (0, 0, 0)
+AMARELO = (255, 255, 0)
+AZUL = (0, 0, 255)
+VERMELHO = (255, 0, 0)
+
+# Tamanho da tela
+largura_tela = 800
+altura_tela = 600
+
+# Criação da tela do jogo
+tela = pygame.display.set_mode((largura_tela, altura_tela))
+pygame.display.set_caption("Pac-Man")
+
+# Classe do Pac-Man
+class PacMan(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.Surface([30, 30])
+        self.image.fill(AMARELO)
+        self.rect = self.image.get_rect()
+        self.velocidade_x = 0
+        self.velocidade_y = 0
+
+    def update(self):
+        self.rect.x += self.velocidade_x
+        self.rect.y += self.velocidade_y
+
+        if self.rect.x < 0:
+            self.rect.x = 0
+        elif self.rect.x > largura_tela - 30:
+            self.rect.x = largura_tela - 30
+
+        if self.rect.y < 0:
+            self.rect.y = 0
+        elif self.rect.y > altura_tela - 30:
+            self.rect.y = altura_tela - 30
+
+# Classe dos Fantasmas
+class Fantasma(pygame.sprite.Sprite):
+    def __init__(self, cor, x, y):
+        super().__init__()
+        self.image = pygame.Surface([20, 20])
+        self.image.fill(cor)
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.velocidade_x = random.choice([-2, 2])
+        self.velocidade_y = random.choice([-2, 2])
+
+    def update(self):
+        self.rect.x += self.velocidade_x
+        self.rect.y += self.velocidade_y
+
+        if self.rect.x < 0 or self.rect.x > largura_tela - 20:
+            self.velocidade_x *= -1
+        if self.rect.y < 0 or self.rect.y > altura_tela - 20:
+            self.velocidade_y *= -1
+
+# Criação dos objetos
+todos_sprites = pygame.sprite.Group()
+fantasmas = pygame.sprite.Group()
+
+pacman = PacMan()
+todos_sprites.add(pacman)
+
+for _ in range(4):
+    fantasma = Fantasma(VERMELHO, random.randint(0, largura_tela - 20), random.randint(0, altura_tela - 20))
+    todos_sprites.add(fantasma)
+    fantasmas.add(fantasma)
+
+# Variáveis de controle de toque
+tocando_esquerda = False
+tocando_direita = False
+tocando_cima = False
+tocando_baixo = False
+
+# Loop principal do jogo
+jogo_rodando = True
+while jogo_rodando:
+    for evento in pygame.event.get():
+        if evento.type == pygame.QUIT:
+            jogo_rodando = False
+        elif evento.type == pygame.MOUSEBUTTONDOWN:
+            pos = pygame.mouse.get_pos()
+            if pos[0] < largura_tela // 2:
+                tocando_esquerda = True
+                tocando_direita = False
+            else:
+                tocando_direita = True
+                tocando_esquerda = False
+            if pos[1] < altura_tela // 2:
+                tocando_cima = True
+                tocando_baixo = False
+            else:
+                tocando_baixo = True
+                tocando_cima = False
+        elif evento.type == pygame.MOUSEBUTTONUP:
+            tocando_esquerda = False
+            tocando_direita = False
+            tocando_cima = False
+            tocando_baixo = False
+
+    # Atualização do movimento do Pac-Man com base nos controles de toque
+    if tocando_esquerda:
+        pacman.velocidade_x = -2
+        pacman.velocidade_y = 0
+    elif tocando_direita:
+        pacman.velocidade_x = 2
+        pacman.velocidade_y = 0
+    elif tocando_cima:
+        pacman.velocidade_y = -2
+        pacman.velocidade_x = 0
+    elif tocando_baixo:
+        pacman.velocidade_y = 2
+        pacman.velocidade_x = 0
+    else:
+        pacman.velocidade_x = 0
+        pacman.velocidade_y = 0
+
+    todos_sprites.update()
+
+    # Verificação de colisão entre Pac-Man e Fantasmas
+    if pygame.sprite.spritecollide(pacman, fantasmas, True):
+        print("Você perdeu!")
+        jogo_rodando = False
+
+    # Preenchimento da tela
+    tela.fill(PRETO)
+
+    # Desenho dos objetos na tela
+    todos_sprites.draw(tela)
+
+    # Atualização da tela
+    pygame.display.flip()
+
+# Encerramento do Pygame
+pygame.quit()
+
+
